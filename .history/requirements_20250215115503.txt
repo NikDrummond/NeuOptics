@@ -1,0 +1,6 @@
+setuptools
+numpy
+math
+graph_tool
+Neurosetta
+vedo

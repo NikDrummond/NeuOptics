@@ -1,0 +1,4 @@
+setuptools
+numpy
+math
+graph_tool
