@@ -1,4 +1,4 @@
-from numpy import vstack, log, ndarray, unique, where, arange, array, argsort
+from numpy import vstack, log, ndarray, unique, where, arange
 from warnings import warn
 from copy import deepcopy
 from scipy.spatial import KDTree
@@ -183,20 +183,20 @@ def _get_data_for_cols(N_all: Forest_graph, unicolumnar_input_types: List | str)
     }
 
     # find order going from most to least
-    counts = array([len(unique_id_dict[t]) for t in unicolumnar_input_types])
+    counts = np.array([len(unique_id_dict[t]) for t in unicolumnar_input_types])
     # sort input types
-    sorted_input_types = [unicolumnar_input_types[i] for i in argsort(counts)[::-1]]
+    sorted_input_types = [unicolumnar_input_types[i] for i in np.argsort(counts)[::-1]]
 
     return all_pnts_dict, unique_id_dict, sorted_input_types
 
 
 def _make_columns(
     curr_type: str, all_pnts_dict: dict, unique_id_dict: dict
-) -> Columns:
+) -> NeuOptics.Columns:
 
 
-    coords = array([i.mean(axis=0) for i in all_pnts_dict[curr_type]])
-    col_ids = arange(coords.shape[0])
+    coords = np.array([i.mean(axis=0) for i in all_pnts_dict[curr_type]])
+    col_ids = np.arange(coords.shape[0])
     col_point_coords = {i: all_pnts_dict[curr_type][i] for i in col_ids}
     types_in_columns = {i: [curr_type] for i in col_ids}
     ids_in_columns = {i: [unique_id_dict[curr_type][i]] for i in col_ids}

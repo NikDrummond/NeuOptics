@@ -1,10 +1,7 @@
-from numpy import vstack, log, ndarray, unique, where, arange, array, argsort
+from numpy import vstack, log, ndarray, unique, where
 from warnings import warn
 from copy import deepcopy
 from scipy.spatial import KDTree
-from typing import List
-from functools import reduce
-from Neurosetta import Forest_graph, Neuron_synapse_table
 
 from .columns import Columns
 
@@ -155,11 +152,11 @@ def merge_columns(
 
     return cols1
 
-def _get_data_for_cols(N_all: Forest_graph, unicolumnar_input_types: List | str):
+def _get_data_for_cols(N_all: nr.Forest_graph, unicolumnar_input_types: List | str):
     """helper function to generate data we need to make columns from a Forest"""
 
     # generate synapse input table from Forest
-    in_table = Neuron_synapse_table(N_all, direction="inputs")
+    in_table = nr.Neuron_synapse_table(N_all, direction="inputs")
     # if we have only been given one type of input neuron
     if isinstance(unicolumnar_input_types, str):
         # turn into a list
@@ -168,7 +165,7 @@ def _get_data_for_cols(N_all: Forest_graph, unicolumnar_input_types: List | str)
     # collect our data into dictionaries
     # get unique ids for each wanted input type - dict
     unique_id_dict = {
-        t: unique(in_table.loc[in_table.Partner_type == t]["pre"].values)
+        t: np.unique(in_table.loc[in_table.Partner_type == t]["pre"].values)
         for t in unicolumnar_input_types
     }
 
@@ -183,26 +180,26 @@ def _get_data_for_cols(N_all: Forest_graph, unicolumnar_input_types: List | str)
     }
 
     # find order going from most to least
-    counts = array([len(unique_id_dict[t]) for t in unicolumnar_input_types])
+    counts = np.array([len(unique_id_dict[t]) for t in unicolumnar_input_types])
     # sort input types
-    sorted_input_types = [unicolumnar_input_types[i] for i in argsort(counts)[::-1]]
+    sorted_input_types = [unicolumnar_input_types[i] for i in np.argsort(counts)[::-1]]
 
     return all_pnts_dict, unique_id_dict, sorted_input_types
 
 
 def _make_columns(
     curr_type: str, all_pnts_dict: dict, unique_id_dict: dict
-) -> Columns:
+) -> NeuOptics.Columns:
 
 
-    coords = array([i.mean(axis=0) for i in all_pnts_dict[curr_type]])
-    col_ids = arange(coords.shape[0])
+    coords = np.array([i.mean(axis=0) for i in all_pnts_dict[curr_type]])
+    col_ids = np.arange(coords.shape[0])
     col_point_coords = {i: all_pnts_dict[curr_type][i] for i in col_ids}
     types_in_columns = {i: [curr_type] for i in col_ids}
     ids_in_columns = {i: [unique_id_dict[curr_type][i]] for i in col_ids}
     Synapse_counts = {i: [all_pnts_dict[curr_type][i].shape[0]] for i in col_ids}
 
-    return Columns(
+    return NeuOptics.Columns(
         coords,
         col_ids,
         col_point_coords,
@@ -213,13 +210,13 @@ def _make_columns(
 
 
 def make_column_map(
-    N_all: Forest_graph,
+    N_all: nr.Forest_graph,
     unicolumnar_input_types: List | str,
     remove_outliers: bool = True,
     threshold: float = 5000,
     outlier_method: str = "absolute",
     force_unique: bool = False,
-) -> Columns:
+) -> NeuOptics.Columns:
     """_summary_
 
     Parameters
@@ -269,6 +266,6 @@ def make_column_map(
     arg1, arg2, arg3, arg4 = remove_outliers, threshold, outlier_method, force_unique
     # merge them
     # Use reduce to iteratively apply merge_columns
-    return reduce(lambda v1, v2: merge_columns(v1, v2, arg1, arg2, arg3, arg4), 
+    return reduce(lambda v1, v2: NeuOptics.merge_columns(v1, v2, arg1, arg2, arg3, arg4), 
                         (cols_dict[col] for col in sorted_input_types))  
     

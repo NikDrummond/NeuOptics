@@ -1,4 +1,4 @@
-from numpy import vstack, log, ndarray, unique, where, arange, array, argsort
+from numpy import vstack, log, ndarray, unique, where, arange, array
 from warnings import warn
 from copy import deepcopy
 from scipy.spatial import KDTree

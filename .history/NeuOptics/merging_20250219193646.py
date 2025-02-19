@@ -1,10 +1,7 @@
-from numpy import vstack, log, ndarray, unique, where, arange, array, argsort
+from numpy import vstack, log, ndarray, unique, where
 from warnings import warn
 from copy import deepcopy
 from scipy.spatial import KDTree
-from typing import List
-from functools import reduce
-from Neurosetta import Forest_graph, Neuron_synapse_table
 
 from .columns import Columns
 
@@ -42,6 +39,7 @@ def _outlier_detection(dist,threshold: float = 5000, outlier_method:str = 'absol
         outlier_mask = (dist > threshold)
     elif outlier_method == 'z_score':
         if threshold > 5:
+            warn_msg = """"""
             warn(f"Outlier threshold is set to {threshold} standard deviations, this is likely to high. \n are you sure you do not mean to set outlier_method to 'absolute'?")
         # lets z score the log distances to look for outliers
         data = log(dist)
@@ -154,121 +152,3 @@ def merge_columns(
     cols1.update_centres()
 
     return cols1
-
-def _get_data_for_cols(N_all: Forest_graph, unicolumnar_input_types: List | str):
-    """helper function to generate data we need to make columns from a Forest"""
-
-    # generate synapse input table from Forest
-    in_table = Neuron_synapse_table(N_all, direction="inputs")
-    # if we have only been given one type of input neuron
-    if isinstance(unicolumnar_input_types, str):
-        # turn into a list
-        unicolumnar_input_types = [unicolumnar_input_types]
-
-    # collect our data into dictionaries
-    # get unique ids for each wanted input type - dict
-    unique_id_dict = {
-        t: unique(in_table.loc[in_table.Partner_type == t]["pre"].values)
-        for t in unicolumnar_input_types
-    }
-
-    ### update here to make dict of all points, then take means for each.
-    # get center of mass for each neuron synapse input type - dict of arrays
-    all_pnts_dict = {
-        t: [
-            in_table.loc[in_table.pre == i][["graph_x", "graph_y", "graph_z"]].values
-            for i in unique_id_dict[t]
-        ]
-        for t in unicolumnar_input_types
-    }
-
-    # find order going from most to least
-    counts = array([len(unique_id_dict[t]) for t in unicolumnar_input_types])
-    # sort input types
-    sorted_input_types = [unicolumnar_input_types[i] for i in argsort(counts)[::-1]]
-
-    return all_pnts_dict, unique_id_dict, sorted_input_types
-
-
-def _make_columns(
-    curr_type: str, all_pnts_dict: dict, unique_id_dict: dict
-) -> Columns:
-
-
-    coords = array([i.mean(axis=0) for i in all_pnts_dict[curr_type]])
-    col_ids = arange(coords.shape[0])
-    col_point_coords = {i: all_pnts_dict[curr_type][i] for i in col_ids}
-    types_in_columns = {i: [curr_type] for i in col_ids}
-    ids_in_columns = {i: [unique_id_dict[curr_type][i]] for i in col_ids}
-    Synapse_counts = {i: [all_pnts_dict[curr_type][i].shape[0]] for i in col_ids}
-
-    return Columns(
-        coords,
-        col_ids,
-        col_point_coords,
-        types_in_columns,
-        ids_in_columns,
-        Synapse_counts,
-    )
-
-
-def make_column_map(
-    N_all: Forest_graph,
-    unicolumnar_input_types: List | str,
-    remove_outliers: bool = True,
-    threshold: float = 5000,
-    outlier_method: str = "absolute",
-    force_unique: bool = False,
-) -> Columns:
-    """_summary_
-
-    Parameters
-    ----------
-    N_all : nr.Forest_graph
-        Forest_grapyh of neurons where each neuron has input synapses and input partner neuron types
-    unicolumnar_input_types : List | str
-        Either single (str) or list of desired unicolumnar input types to make columns from
-    remove_outliers : bool, optional
-        Should we try to remove outliers?, by default True
-    threshold : float, optional
-        threshold value for outlier removal, by default 5000
-    outlier_method : str, optional
-        method for outlier detection. Can be either absolute or z_score.
-        If absolute, column merges greater than this value (in spatial units of points which make up the columns)
-        will not be merged.
-        
-        Alternatively, if method is z_score, this value is the number of standard deviations away from the mean of the 
-        log distances between columns. 
-        By default "absolute"
-    force_unique : bool, optional
-        If True, only one column from source_columns can be merged into one column from target_columns, by default False
-
-
-    Returns
-    -------
-    NeuOptics.Columns
-        Columns object with merged columns from all given unicolumnar neuron types
-    """
-
-    # get data we need to make Columns objects
-    all_pnts_dict, unique_id_dict, sorted_input_types = _get_data_for_cols(
-        N_all, unicolumnar_input_types
-    )
-
-    # we only have one to return
-    if isinstance(unicolumnar_input_types, str):
-        return _make_columns(unicolumnar_input_types, all_pnts_dict, unique_id_dict)
-
-    # otherwise
-    # make a dictionary of columns
-    cols_dict = {
-        i: _make_columns(i, all_pnts_dict, unique_id_dict) for i in sorted_input_types
-    }
-
-    # fixed function arguments
-    arg1, arg2, arg3, arg4 = remove_outliers, threshold, outlier_method, force_unique
-    # merge them
-    # Use reduce to iteratively apply merge_columns
-    return reduce(lambda v1, v2: merge_columns(v1, v2, arg1, arg2, arg3, arg4), 
-                        (cols_dict[col] for col in sorted_input_types))  
-    
