@@ -1,4 +1,6 @@
-from numpy import ndarray, array
+import warnings
+from copy import deepcopy
+from numpy import ndarray, array, vstack, log
 # columns class - add vmf back in later.
 class Columns:
     """

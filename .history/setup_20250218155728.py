@@ -28,6 +28,5 @@ setup(name='NeuOptics',
 	long_description=open("README.md").read(),
 	long_description_content_type="text/markdown",
 	zip_safe=False,
-	include_package_data = True,
-	package_data = {"NeuOptics": ['data/*.csv']},
+	include
 )

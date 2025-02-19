@@ -1,4 +1,5 @@
-from numpy import ndarray, array
+
+from numpy import ndarray, array, vstack, log
 # columns class - add vmf back in later.
 class Columns:
     """
