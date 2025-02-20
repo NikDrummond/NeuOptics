@@ -16,7 +16,7 @@ def flywire_column_coordinate_table():
 def flywire_column_assignment_table():
     """Load the column coordinates data file from the installed package."""
     try:
-        with pkg_resources.files(NeuOptics).joinpath("data/N_id_column_assignment.csv").open("r") as f:
+        with pkg_resources.files(NeuOptics).joinpath("data/N_id.column_assignment.csv").open("r") as f:
             return pd.read_csv(f)
     except FileNotFoundError:
         raise FileNotFoundError("Data file 'N_id_column_assignment.csv' not found in the installed package. "
