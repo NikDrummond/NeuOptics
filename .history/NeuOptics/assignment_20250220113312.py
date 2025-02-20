@@ -3,7 +3,6 @@ from .columns import Columns
 from .flywire import flywire_column_assignment_table
 from numpy import array, ndarray, unique, where, partition
 from typing import List
-from warnings import warn
 
 def assign_preallocated_columns(cols:Columns,data:DataFrame | None = None, bind = True) -> None | dict:
     """Assign column IDs from a dataframe to columns object based on Columns_N_ids in given object and 
