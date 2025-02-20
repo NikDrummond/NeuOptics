@@ -51,12 +51,12 @@ def pq_to_qrs_transform(coords: jnp.ndarray) -> jnp.ndarray:
     Returns
     -------
     jnp.ndarray
-        Array of [q,r,s] coordinates
+        Array of []
 
     Raises
     ------
     AttributeError
-        Input must be 1 or 2 dimensional.
+        _description_
     """
     if coords.ndim == 1:
         return _fwy_coord_transform(coords)

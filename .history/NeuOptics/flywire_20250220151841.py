@@ -41,22 +41,22 @@ def _fwy_coord_transform(arr: jnp.ndarray) -> jnp.ndarray:
 def pq_to_qrs_transform(coords: jnp.ndarray) -> jnp.ndarray:
     """Flywire uses a [p,q] coordinate system, where as HexCraft uses a 
     [q,r,s] coordinate system. This function allows for transformations from
-    [p,q] to [q,r,s]. here: q = p - q; r = -p, and s = -q-r 
+    [p,q] to [q,r,s]. here: q = p - q; 
 
     Parameters
     ----------
     coords : jnp.ndarray
-        Array of [p,q] coordinates
+        _description_
 
     Returns
     -------
     jnp.ndarray
-        Array of [q,r,s] coordinates
+        _description_
 
     Raises
     ------
     AttributeError
-        Input must be 1 or 2 dimensional.
+        _description_
     """
     if coords.ndim == 1:
         return _fwy_coord_transform(coords)
