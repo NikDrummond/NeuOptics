@@ -62,7 +62,7 @@ def _col_pnt_likelihood(cols:Columns,col_ind:int,coords:np.ndarray,norm:bool = T
     """
     
     # normalise points
-    coords = normalise(coords)
+    coords = GeoJax.normalise(coords)
     mu = cols.mu[col_ind]
     kappa = cols.kappa[col_ind]
 
