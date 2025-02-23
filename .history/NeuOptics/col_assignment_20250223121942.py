@@ -153,6 +153,32 @@ def make_consensus_ids(cols: Columns) -> np.ndarray:
         ]
     )
 
+
+def _synapse_counts_row(cols,i,m):
+    # create an empty array of length = data columns
+    row_data = np.zeros(m+1)
+    for j in range(len(cols.Assigned_columns[i])):
+
+        # if we assigned -1 here
+        if cols.Assigned_columns[i][j] == -1:
+            pass
+        else:
+            # column index is column id - 1
+            ind = cols.Assigned_columns[i][j]-1
+            row_data[ind] += cols.Synapse_counts[i][j]
+    return row_data
+
+def synapse_count_matrix(cols,assignment_df, assume_0_index ):
+
+    n = len(cols.Column_ids)
+    m = len(assignment_df)
+    mat = np.zeros((n,m))
+
+    for i in range(n):
+        mat[i] = _synapse_counts_row(cols,i,m)
+    
+    return mat
+
 def hungarian_tie_handling(prob_matrix):
     """
     Finds the optimal set of [row, column] indices that maximize the sum of assigned values
@@ -220,41 +246,16 @@ def hungarian_tie_handling(prob_matrix):
 
 def make_consensus_hungarian(cols, assignment_df, return_dict = True):
 
-    # get current column ids
-    curr_ids = cols.Column_ids
-    # get possible assignment column ids
-    poss_assignemnt_ids = assignment_df.column_id.values
-    # get n and m
-    n = len(curr_ids)
-    m = len(poss_assignemnt_ids)
-    # make index to id dictionaries for lookup
-    row_dict = {i:curr_ids[i] for i in range(n)}
-    col_dict = {i:poss_assignemnt_ids[i] for i in range(m)}
-    # make empty n by m matrix
-    mat = np.zeros((n,m))
-    # iterate over rows
-    for i in range(mat.shape[0]):
-        # make an empty row
-        curr_row = np.zeros(m)
-        # get current collumn
-        curr_col = row_dict[i]
-        # get current assignments
-        curr_assignments = cols.Assigned_columns[i]
-        # iterate through current curr_assignments
-        for k in range(len(curr_assignments)):
-            this_col_ass = curr_assignments[k]
-            # get the index of the column
-            j = np.where(poss_assignemnt_ids == this_col_ass)[0]
-            curr_row[j] += cols.Synapse_counts[row_dict[i]][k]
-        # update this row in mat
-        mat[i] = curr_row
-    # hungarian
-    assignments = hungarian_tie_handling(mat)
-    # unpack
-    output_dict = {i:np.nan for i in cols.Column_ids}
-    for a in assignments:
-        try:
-            output_dict[row_dict[a[0]]] = col_dict[a[1]]
-        except:
-            pass
-    return output_dict
+    mat = synapse_count_matrix(cols,assignment_df)
+    assignment = hungarian_tie_handling(mat)
+    if return_dict:
+        dict_to_return = dict()
+        for i in cols.Column_ids:
+            assignment_tuple = assignment[i]
+            try:
+                dict_to_return[i] = assignment[i][1]
+            except:
+                dict_to_return[i] = np.nan
+        return dict_to_return
+    else:
+        return  assignment
