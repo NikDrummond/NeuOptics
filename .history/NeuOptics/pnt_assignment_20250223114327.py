@@ -2,6 +2,7 @@ from .columns import Columns
 from GeoJax import normalise
 from scipy.stats import vonmises_fisher as vmf
 import numpy as np
+from scipy.optimize import linear_sum_assignment
 
 
 def fit_vonMises_Fisher(cols:Columns, bind:bool = True) -> tuple[dict, dict] | None:
@@ -112,3 +113,93 @@ def vmf_likelihood_matrix(cols: Columns, coords: np.ndarray, norm:bool = True):
             data[i] = ar
 
     return data
+
+def _synapse_counts_row(cols,i,m):
+    # create an empty array of length = data columns
+    row_data = np.zeros(m)
+    for j in range(len(cols.Assigned_columns[i])):
+
+        # if we assigned -1 here
+        if cols.Assigned_columns[i][j] == -1:
+            pass
+        else:
+            # column index is column id - 1
+            ind = cols.Assigned_columns[i][j]-1
+            row_data[ind] += cols.Synapse_counts[i][j]
+    return row_data
+
+def synapse_count_matrix(cols,assignment_df):
+
+    n = len(cols.Column_ids)
+    m = len(assignment_df)
+    mat = np.zeros((n,m))
+
+    for i in range(n):
+        mat[i] = _synapse_counts_row(cols,i,m)
+    
+    return mat
+
+def hungarian_tie_handling(prob_matrix):
+    """
+    Finds the optimal set of [row, column] indices that maximize the sum of assigned values
+    while handling ties systematically:
+    - Rows with all zeros are ignored (assigned np.nan).
+    - Non-zero ties are resolved by testing all possibilities for global optimization.
+    - Ensures that no column is assigned to more than one row.
+
+    Parameters:
+        prob_matrix (numpy.ndarray): An n x m array of probabilities (values between 0 and 1).
+
+    Returns:
+        list: Optimal assignments (row, column) with np.nan for rows that are ignored.
+    """
+    n, m = prob_matrix.shape
+    assignments = [None] * n  # Initialize assignments
+    used_columns = set()  # Track assigned columns
+
+    for i, row in enumerate(prob_matrix):
+        max_val = np.max(row)
+        tied_indices = np.where(row == max_val)[0]
+
+        if max_val == 0:
+            # Case 1: All values in the row are zero
+            assignments[i] = np.nan
+            continue
+
+        # Track all valid columns for this row
+        valid_columns = [col for col in tied_indices if col not in used_columns]
+        if not valid_columns:
+            # No valid column to assign
+            assignments[i] = np.nan
+            continue
+
+        # Test all valid columns and pick the best option
+        best_score = -np.inf
+        best_assignment = None
+
+        for col in valid_columns:
+            # Create a temporary matrix where this row assigns to `col`
+            temp_matrix = prob_matrix.copy()
+            temp_matrix[i, :] = 0  # Zero out the row
+            temp_matrix[i, col] = max_val  # Assign the tied value
+
+            # Solve the assignment problem for the rest
+            cost_matrix = -temp_matrix  # Negate for maximization
+            row_indices, col_indices = linear_sum_assignment(cost_matrix)
+            current_score = -cost_matrix[row_indices, col_indices].sum()
+
+            if current_score > best_score:
+                best_score = current_score
+                best_assignment = col
+
+        # Assign the best column, if found
+        if best_assignment is not None:
+            assignments[i] = (i, best_assignment)
+            used_columns.add(best_assignment)
+        else:
+            # Fallback: assign the first available valid column
+            fallback_column = valid_columns[0]
+            assignments[i] = (i, fallback_column)
+            used_columns.add(fallback_column)
+
+    return assignments

@@ -3,7 +3,6 @@ from GeoJax import normalise
 from scipy.stats import vonmises_fisher as vmf
 import numpy as np
 
-
 def fit_vonMises_Fisher(cols:Columns, bind:bool = True) -> tuple[dict, dict] | None:
     """Fit a von_Mises Fisher distribution to each column
 
@@ -112,3 +111,4 @@ def vmf_likelihood_matrix(cols: Columns, coords: np.ndarray, norm:bool = True):
             data[i] = ar
 
     return data
+

@@ -257,4 +257,4 @@ def make_consensus_hungarian(cols, assignment_df, return_dict = True):
             except:
                 dict_to_return[i] = np.nan
     else:
-        return  assignment
+        return  assignemnt

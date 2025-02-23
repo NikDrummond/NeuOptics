@@ -1,11 +1,9 @@
 from pandas import DataFrame
 from .columns import Columns
 from .flywire import flywire_column_assignment_table
-import numpy as np
+from numpy import array, ndarray, unique, where, partition
 from typing import List
 from warnings import warn
-from scipy.optimize import linear_sum_assignment
-
 
 def assign_preallocated_columns(cols:Columns,data:DataFrame | None = None, bind = True) -> None | dict:
     """Assign column IDs from a dataframe to columns object based on Columns_N_ids in given object and 
@@ -44,14 +42,14 @@ def assign_preallocated_columns(cols:Columns,data:DataFrame | None = None, bind 
                 assigned_columns.append(data.loc[data.root_id == i,'column_id'].values[0])
             except:
                 assigned_columns.append(-1)
-        col_dict[col_id] = np.array(assigned_columns)
+        col_dict[col_id] = array(assigned_columns)
 
     if bind:
         cols.Assigned_columns = col_dict
     else:
         return col_dict
     
-def _make_consensus(col: int, col_ids: np.ndarray, syn_counts: np.ndarray) -> int:
+def _make_consensus(col: int, col_ids: ndarray, syn_counts: ndarray) -> int:
     """
     Internal function to determine the consensus column ID for a given column.
 
@@ -74,22 +72,22 @@ def _make_consensus(col: int, col_ids: np.ndarray, syn_counts: np.ndarray) -> in
         - -2 if a tie occurs for the highest synapse count.
     """
     if isinstance(syn_counts, List):
-        syn_counts = np.array(syn_counts)
+        syn_counts = array(syn_counts)
     if isinstance(col_ids, List):
-        col_ids = np.array(col_ids)
+        col_ids = array(col_ids)
 
     ### logic
 
     # if we have only one value
-    if len(np.unique(col_ids)) == 1:
+    if len(unique(col_ids)) == 1:
 
-        this_col = np.unique(col_ids)[0]
+        this_col = unique(col_ids)[0]
         # this will be -1 if all are unassigned
         consensus = this_col
 
     # alternatively, if we have multiple values, do we have only one when we remove -1s/
     else:
-        unique_cols = np.unique(col_ids)
+        unique_cols = unique(col_ids)
         if -1 in unique_cols:
 
             unique_cols = unique_cols[unique_cols != -1]
@@ -102,13 +100,13 @@ def _make_consensus(col: int, col_ids: np.ndarray, syn_counts: np.ndarray) -> in
         else:
 
             # get counts for each unique column
-            totals = np.array(
-                [sum(syn_counts[np.where(col_ids == u_col)]) for u_col in unique_cols]
+            totals = array(
+                [sum(syn_counts[where(col_ids == u_col)]) for u_col in unique_cols]
             )
 
             # check if there is a tie
             # Find the two highest values efficiently
-            largest_two = np.partition(totals, -2)[-2:]
+            largest_two = partition(totals, -2)[-2:]
             # Check if they are the same
             if largest_two[0] == largest_two[1]:
                 consensus = -2
@@ -116,11 +114,11 @@ def _make_consensus(col: int, col_ids: np.ndarray, syn_counts: np.ndarray) -> in
                     f"No consensus was found for column {col}, giving it an assignment of -2"
                 )
             else:
-                consensus = unique_cols[np.where(totals == totals.max())][0]
+                consensus = unique_cols[where(totals == totals.max())][0]
     return consensus
 
 
-def make_consensus_ids(cols: Columns) -> np.ndarray:
+def make_consensus_ids(cols: Columns) -> ndarray:
     """
     Compute consensus column IDs for all columns based on synapse counts.
 
@@ -146,115 +144,9 @@ def make_consensus_ids(cols: Columns) -> np.ndarray:
     np.ndarray
         An array of consensus column IDs computed for all columns.
     """
-    return np.array(
+    return array(
         [
             _make_consensus(c, cols.Assigned_columns[c], cols.Synapse_counts[c])
             for c in cols.Column_ids
         ]
     )
-
-
-def _synapse_counts_row(cols,i,m):
-    # create an empty array of length = data columns
-    row_data = np.zeros(m)
-    for j in range(len(cols.Assigned_columns[i])):
-
-        # if we assigned -1 here
-        if cols.Assigned_columns[i][j] == -1:
-            pass
-        else:
-            # column index is column id - 1
-            ind = cols.Assigned_columns[i][j]-1
-            row_data[ind] += cols.Synapse_counts[i][j]
-    return row_data
-
-def synapse_count_matrix(cols,assignment_df):
-
-    n = len(cols.Column_ids)
-    m = len(assignment_df)
-    mat = np.zeros((n,m))
-
-    for i in range(n):
-        mat[i] = _synapse_counts_row(cols,i,m)
-    
-    return mat
-
-def hungarian_tie_handling(prob_matrix):
-    """
-    Finds the optimal set of [row, column] indices that maximize the sum of assigned values
-    while handling ties systematically:
-    - Rows with all zeros are ignored (assigned np.nan).
-    - Non-zero ties are resolved by testing all possibilities for global optimization.
-    - Ensures that no column is assigned to more than one row.
-
-    Parameters:
-        prob_matrix (numpy.ndarray): An n x m array of probabilities (values between 0 and 1).
-
-    Returns:
-        list: Optimal assignments (row, column) with np.nan for rows that are ignored.
-    """
-    n, m = prob_matrix.shape
-    assignments = [None] * n  # Initialize assignments
-    used_columns = set()  # Track assigned columns
-
-    for i, row in enumerate(prob_matrix):
-        max_val = np.max(row)
-        tied_indices = np.where(row == max_val)[0]
-
-        if max_val == 0:
-            # Case 1: All values in the row are zero
-            assignments[i] = np.nan
-            continue
-
-        # Track all valid columns for this row
-        valid_columns = [col for col in tied_indices if col not in used_columns]
-        if not valid_columns:
-            # No valid column to assign
-            assignments[i] = np.nan
-            continue
-
-        # Test all valid columns and pick the best option
-        best_score = -np.inf
-        best_assignment = None
-
-        for col in valid_columns:
-            # Create a temporary matrix where this row assigns to `col`
-            temp_matrix = prob_matrix.copy()
-            temp_matrix[i, :] = 0  # Zero out the row
-            temp_matrix[i, col] = max_val  # Assign the tied value
-
-            # Solve the assignment problem for the rest
-            cost_matrix = -temp_matrix  # Negate for maximization
-            row_indices, col_indices = linear_sum_assignment(cost_matrix)
-            current_score = -cost_matrix[row_indices, col_indices].sum()
-
-            if current_score > best_score:
-                best_score = current_score
-                best_assignment = col
-
-        # Assign the best column, if found
-        if best_assignment is not None:
-            assignments[i] = (i, best_assignment)
-            used_columns.add(best_assignment)
-        else:
-            # Fallback: assign the first available valid column
-            fallback_column = valid_columns[0]
-            assignments[i] = (i, fallback_column)
-            used_columns.add(fallback_column)
-
-    return assignments
-
-def make_consensus_hungarian(cols, assignment_df, return_dict = True):
-
-    mat = synapse_count_matrix(cols,assignment_df)
-    assignment = hungarian_tie_handling(mat)
-    if return_dict:
-        dict_to_return = dict()
-        for i in cols.Column_ids:
-            assignment_tuple = assignment[i]
-            try:
-                dict_to_return[i] = assignment[i][1]
-            except:
-                dict_to_return[i] = np.nan
-    else:
-        return  assignment

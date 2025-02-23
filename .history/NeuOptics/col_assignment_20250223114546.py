@@ -4,8 +4,6 @@ from .flywire import flywire_column_assignment_table
 import numpy as np
 from typing import List
 from warnings import warn
-from scipy.optimize import linear_sum_assignment
-
 
 def assign_preallocated_columns(cols:Columns,data:DataFrame | None = None, bind = True) -> None | dict:
     """Assign column IDs from a dataframe to columns object based on Columns_N_ids in given object and 
@@ -103,12 +101,12 @@ def _make_consensus(col: int, col_ids: np.ndarray, syn_counts: np.ndarray) -> in
 
             # get counts for each unique column
             totals = np.array(
-                [sum(syn_counts[np.where(col_ids == u_col)]) for u_col in unique_cols]
+                [sum(syn_counts[where(col_ids == u_col)]) for u_col in unique_cols]
             )
 
             # check if there is a tie
             # Find the two highest values efficiently
-            largest_two = np.partition(totals, -2)[-2:]
+            largest_two = partition(totals, -2)[-2:]
             # Check if they are the same
             if largest_two[0] == largest_two[1]:
                 consensus = -2
@@ -116,11 +114,11 @@ def _make_consensus(col: int, col_ids: np.ndarray, syn_counts: np.ndarray) -> in
                     f"No consensus was found for column {col}, giving it an assignment of -2"
                 )
             else:
-                consensus = unique_cols[np.where(totals == totals.max())][0]
+                consensus = unique_cols[where(totals == totals.max())][0]
     return consensus
 
 
-def make_consensus_ids(cols: Columns) -> np.ndarray:
+def make_consensus_ids(cols: Columns) -> ndarray:
     """
     Compute consensus column IDs for all columns based on synapse counts.
 
@@ -146,7 +144,7 @@ def make_consensus_ids(cols: Columns) -> np.ndarray:
     np.ndarray
         An array of consensus column IDs computed for all columns.
     """
-    return np.array(
+    return array(
         [
             _make_consensus(c, cols.Assigned_columns[c], cols.Synapse_counts[c])
             for c in cols.Column_ids
@@ -243,18 +241,3 @@ def hungarian_tie_handling(prob_matrix):
             used_columns.add(fallback_column)
 
     return assignments
-
-def make_consensus_hungarian(cols, assignment_df, return_dict = True):
-
-    mat = synapse_count_matrix(cols,assignment_df)
-    assignment = hungarian_tie_handling(mat)
-    if return_dict:
-        dict_to_return = dict()
-        for i in cols.Column_ids:
-            assignment_tuple = assignment[i]
-            try:
-                dict_to_return[i] = assignment[i][1]
-            except:
-                dict_to_return[i] = np.nan
-    else:
-        return  assignment

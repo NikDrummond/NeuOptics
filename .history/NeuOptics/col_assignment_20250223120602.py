@@ -253,8 +253,7 @@ def make_consensus_hungarian(cols, assignment_df, return_dict = True):
         for i in cols.Column_ids:
             assignment_tuple = assignment[i]
             try:
-                dict_to_return[i] = assignment[i][1]
+                dict_to_return[i] = T4_unique_assignment[i][1]
             except:
                 dict_to_return[i] = np.nan
-    else:
-        return  assignment
+    return 

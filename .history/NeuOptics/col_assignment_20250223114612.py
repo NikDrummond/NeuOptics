@@ -243,18 +243,3 @@ def hungarian_tie_handling(prob_matrix):
             used_columns.add(fallback_column)
 
     return assignments
-
-def make_consensus_hungarian(cols, assignment_df, return_dict = True):
-
-    mat = synapse_count_matrix(cols,assignment_df)
-    assignment = hungarian_tie_handling(mat)
-    if return_dict:
-        dict_to_return = dict()
-        for i in cols.Column_ids:
-            assignment_tuple = assignment[i]
-            try:
-                dict_to_return[i] = assignment[i][1]
-            except:
-                dict_to_return[i] = np.nan
-    else:
-        return  assignment
