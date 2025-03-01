@@ -47,6 +47,5 @@ class Columns:
         """
         self.Column_centres = array([self.Column_points[i].mean(axis = 0) for i in self.Column_ids])
 
-    def num_columns(self) -> int:
-        """Return the number of columns"""
-        return self.Column_ids.shape[0]
+    def column_count(self) -> int:
+        return T4_cols.Column_ids.shape[0]

@@ -113,7 +113,7 @@ def vmf_likelihood_matrix(cols: Columns, coords: np.ndarray, norm:bool = True):
 
     return data
 
-def max_pnt_assignment(cols:Columns, coordinates: np.ndarray)-> np.array:
+def max_pnt_assignment(cols:NeuOptics.Columns, coordinates: np.ndarray)-> np.array:
     """Return the index of column which each point in coordinates is assigned to, based on maximum liklelihood
 
     Given Columns object must have the mu and kappa attributes so we can evaluate coordinates against the vonMises-Fisher pdf.

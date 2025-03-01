@@ -113,7 +113,7 @@ def vmf_likelihood_matrix(cols: Columns, coords: np.ndarray, norm:bool = True):
 
     return data
 
-def max_pnt_assignment(cols:Columns, coordinates: np.ndarray)-> np.array:
+def max_pnt_assignment(cols:NeuOptics.Columns, coordinates: np.ndarray)-> np.array:
     """Return the index of column which each point in coordinates is assigned to, based on maximum liklelihood
 
     Given Columns object must have the mu and kappa attributes so we can evaluate coordinates against the vonMises-Fisher pdf.
@@ -126,13 +126,13 @@ def max_pnt_assignment(cols:Columns, coordinates: np.ndarray)-> np.array:
     cols : NeuOptics.Columns
         Column object to assign points to
     coordinates : np.ndarray
-        Coordinates to assign to columns
+        Coordinates to assigne
 
     Returns
     -------
     np.array
         In the same order as coordinates, index of column which each coordinate is assigned to.
     """
-    assert (hasattr(cols, 'mu')) & (hasattr(cols, 'kappa')), 'Columns object must have mu and kappa attribute, \n Please fit the vonMises-Fisher using neuOptics.fit_vonMises_Fisher'
-    mat = vmf_likelihood_matrix(cols,coordinates)
+    assert (hasattr(T4_cols, 'mu')) & (hasattr(T4_cols, 'kappa')), 'Columns object must have mu and kappa attribute, \n Please fit the vonMises-Fisher using neuOptics.fit_vonMises_Fisher'
+    mat = NeuOptics.vmf_likelihood_matrix(cols,coordinates)
     return np.nanargmax(mat, axis = 0)
