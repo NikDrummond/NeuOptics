@@ -227,8 +227,4 @@ def point_on_threshold(mu, t):
     # The result x is on the unit sphere.
     return x
 
-def likelihood_threshold(x,mu,kappa,norm = True):
-    if norm:
-        return vmf.pdf(x,mu,kappa)/vmf.pdf(mu,mu,kappa)
-    else:
-        return vmf.pdf(x,mu,kappa)
+def likelihood_threshold(x,mu,kappa,norm = True)"ProcessLookupError()"

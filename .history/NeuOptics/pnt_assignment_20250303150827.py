@@ -228,7 +228,4 @@ def point_on_threshold(mu, t):
     return x
 
 def likelihood_threshold(x,mu,kappa,norm = True):
-    if norm:
-        return vmf.pdf(x,mu,kappa)/vmf.pdf(mu,mu,kappa)
-    else:
-        return vmf.pdf(x,mu,kappa)
+    
