@@ -1,5 +1,5 @@
 from .columns import Columns
-from GeoJax import normalise
+from GeoJax import normalize
 from scipy.stats import vonmises_fisher as vmf
 import numpy as np
 
@@ -226,3 +226,9 @@ def point_on_threshold(mu, t):
     x = np.cos(alpha)*mu + np.sin(alpha)*u
     # The result x is on the unit sphere.
     return x
+
+def likelihood_threshold(x,mu,kappa,norm = True):
+    if norm:
+        return vmf.pdf(x,mu,kappa)/vmf.pdf(mu,mu,kappa)
+    else:
+        return vmf.pdf(x,mu,kappa)

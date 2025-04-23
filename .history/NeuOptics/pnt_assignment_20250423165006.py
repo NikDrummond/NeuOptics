@@ -1,5 +1,5 @@
 from .columns import Columns
-from GeoJax import normalise
+from GeoJax import normalize
 from scipy.stats import vonmises_fisher as vmf
 import numpy as np
 
@@ -229,4 +229,6 @@ def point_on_threshold(mu, t):
 
 def likelihood_threshold(x,mu,kappa,norm = True):
     if norm:
-        return 
+        return vmf.pdf(x,mu,kappa)/vmf.pdf(mu,mu,kappa)
+    else:
+        return vmf.pdf(x,mu,kappa)

@@ -1,5 +1,5 @@
 from .columns import Columns
-from GeoJax import normalise
+from GeoJax import normalize
 from scipy.stats import vonmises_fisher as vmf
 import numpy as np
 
