@@ -225,7 +225,7 @@ def make_column_map(
     Parameters
     ----------
     N_all : nr.Forest_graph
-        Forest_grapyh of neurons where each neuron has input synapses and input partner neuron types
+        Forest_graph of neurons where each neuron has input synapses and input partner neuron types
     unicolumnar_input_types : List | str
         Either single (str) or list of desired unicolumnar input types to make columns from
     remove_outliers : bool, optional
